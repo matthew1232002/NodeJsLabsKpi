@@ -1,7 +1,23 @@
-// import { logger } from './utils/logger';
-import { PORT } from './config/preload';
-import { createServer } from './config/server';
+import Server from './lib/server';
+import router from './routes/index';
 
-const app = createServer();
+const PORT = parseInt(process.env.PORT || '8080');
 
-app.listen(PORT || 3001);
+const server = new Server();
+
+server.use(router).listen(PORT, () => {
+	console.log(`Server is running on port ${PORT}`);
+});
+
+const shutdown = async () => {
+	setTimeout(() => {
+		console.error('Could not close connections in time, forcefully shutting down');
+		process.exit(1);
+	}, 10000);
+	await server.shutdown();
+	process.exit(0);
+};
+
+process.on('SIGTERM', async () => {
+	await shutdown();
+});
